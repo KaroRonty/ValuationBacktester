@@ -38,7 +38,7 @@ full_data$bm[full_data$bm == "NaN"] <- NA
 full_data$CAPE[full_data$CAPE == "NA"] <- NA
 full_data$CAPE <- as.numeric(full_data$CAPE)
 
-# -------------------------------- 
+# --------------------------------
 # Calculate returns for the next 10 years
 # First calculate the daily returns
 full_data$diff <- (lag(lead(full_data$P) / full_data$P))
@@ -46,30 +46,48 @@ full_data$diff <- (lag(lead(full_data$P) / full_data$P))
 full_data$index <- NA
 full_data$index[2] <- (full_data$P[1] + full_data$D[1] / 12) * full_data$diff[2]
 
-for (i in 1:I(nrow(full_data) - 2)){
-  full_data$index[i+2] <- (full_data$index[i+1] + full_data$D[i+1] / 12) * full_data$diff[i+2]
+for (i in 1:I(nrow(full_data) - 2)) {
+  full_data$index[i + 2] <- (full_data$index[i + 1] + full_data$D[i + 1] / 12) * full_data$diff[i + 2]
 }
 # Calculate ten year returns
-for (i in 1:I(nrow(full_data) - 1)){
-  full_data$tenyear[i+1] <- (full_data$index[i+121] / full_data$index[i+1]) ^ 0.1
+for (i in 1:I(nrow(full_data) - 1)) {
+  full_data$tenyear[i + 1] <- (full_data$index[i + 121] / full_data$index[i + 1])^0.1
 }
-# Change the criteria and settings below, rownames act as criteria values
 # Backtest for CAPE
-temp <- as.data.frame(matrix(nrow = 45-4, ncol = 1))
-for (i in 4:45){
-  x <- filter(full_data, CAPE < i + 1 & CAPE > i)
-  temp[i,1] <- mean(x$tenyear, na.rm = T)
-}
-plot(rownames(temp), temp$V1, xlab = "CAPE", ylab = "Returns")
-abline(lm(temp$V1 ~ as.numeric(rownames(temp))))
+cape_quantiles <- as.data.frame(quantile(full_data$CAPE, seq(0.1, 0.9, by = 0.1), na.rm = T))
+cape_quantiles$returns <- cbind(rep(NA, 9))
+colnames(cape_quantiles) <- c("cape", "returns")
+cape_quantiles <- rbind(c(-Inf, NA), cape_quantiles, c(Inf, NA))
 
-# Another backtest for P/E
-full_data$PE <- full_data$P / full_data$E
-temp <- as.data.frame(matrix(nrow = 55-5, ncol = 1))
-for (i in 5:55){
-  x <- filter(full_data, PE < i + 1 & PE > i)
-  temp[i,1] <- mean(x$tenyear, na.rm = T)
+for (i in 1:10) {
+  full_data %>%
+    filter(
+      CAPE > cape_quantiles[i, 1],
+      CAPE < cape_quantiles[i + 1, 1]
+    ) %>%
+    summarise(mean(tenyear, na.rm = T)) -> cape_quantiles[i + 1, 2]
 }
-plot(rownames(temp), temp$V1, xlab = "P/E", ylab = "Returns")
-abline(lm(temp$V1 ~ as.numeric(rownames(temp))))
 
+cape_quantiles <- cape_quantiles[2:11, ]
+plot(cape_quantiles)
+abline(lm(cape_quantiles$returns[1:9] ~ cape_quantiles$capes[1:9]))
+
+# Backtest for P/B
+full_data$pb <- 1 / as.numeric(full_data$bm)
+pb_quantiles <- as.data.frame(quantile(full_data$pb, seq(0.1, 0.9, by = 0.1), na.rm = T))
+pb_quantiles$returns <- cbind(rep(NA, 9))
+colnames(pb_quantiles) <- c("pb", "returns")
+pb_quantiles <- rbind(c(-Inf, NA), pb_quantiles, c(Inf, NA))
+
+for (i in 1:10) {
+  full_data %>%
+    filter(
+      pb > pb_quantiles[i, 1],
+      pb < pb_quantiles[i + 1, 1]
+    ) %>%
+    summarise(mean(tenyear, na.rm = T)) -> pb_quantiles[i + 1, 2]
+}
+
+pb_quantiles <- pb_quantiles[2:11, ]
+plot(pb_quantiles)
+abline(lm(pb_quantiles$returns[1:9] ~ pb_quantiles$pb[1:9]))
