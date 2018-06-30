@@ -70,7 +70,7 @@ for (i in 1:10) {
 
 cape_quantiles <- cape_quantiles[2:11, ]
 plot(cape_quantiles)
-abline(lm(cape_quantiles$returns[1:9] ~ cape_quantiles$capes[1:9]))
+abline(lm(cape_quantiles$returns[1:9] ~ cape_quantiles$cape[1:9]))
 
 # Backtest for P/B
 full_data$pb <- 1 / as.numeric(full_data$bm)
