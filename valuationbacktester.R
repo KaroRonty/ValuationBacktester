@@ -3,21 +3,6 @@ library(dplyr) # data formatting
 # Retrieve data from Shiller & Goyal
 source("shiller_goyal_data_retriever.r")
 
-# --------------------------------
-# Calculate returns for the next 10 years
-# First calculate the daily returns
-full_data$diff <- (lag(lead(full_data$P) / full_data$P))
-# Then calculate an index including dividends
-full_data$index <- NA
-full_data$index[2] <- (full_data$P[1] + full_data$D[1] / 12) * full_data$diff[2]
-
-for (i in 1:I(nrow(full_data) - 2)) {
-  full_data$index[i + 2] <- (full_data$index[i + 1] + full_data$D[i + 1] / 12) * full_data$diff[i + 2]
-}
-# Calculate ten year returns
-for (i in 1:I(nrow(full_data) - 1)) {
-  full_data$tenyear[i + 1] <- (full_data$index[i + 121] / full_data$index[i + 1])^0.1
-}
 # Backtest for CAPE
 cape_quantiles <- as.data.frame(quantile(full_data$CAPE, seq(0.1, 0.9, by = 0.1), na.rm = T))
 cape_quantiles$returns <- cbind(rep(NA, 9))
