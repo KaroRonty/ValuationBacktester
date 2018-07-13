@@ -1,7 +1,7 @@
 library(dplyr) # data formatting
 
 # Retrieve data from Shiller & Goyal
-source("shiller_goyal_data_retriever.r")
+source("https://raw.githubusercontent.com/KaroRonty/ShillerGoyalDataRetriever/master/ShillerGoyalDataRetriever.r")
 
 # Backtest for CAPE
 cape_quantiles <- as.data.frame(quantile(full_data$CAPE, seq(0.1, 0.9, by = 0.1), na.rm = T))
